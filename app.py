@@ -1,11 +1,8 @@
 import streamlit as st
 from src.retrieval_service import load_resources, answer_query
-#from src.translation import translate_text
 from src.translation import translate_to_english, translate_from_english
 import time
 import base64
-
-
 
 # ------------------------------
 # Load resources
@@ -123,8 +120,8 @@ if "input_box" not in st.session_state:
 # SIDEBAR
 # ------------------------------
 st.sidebar.title("🌐 Language")
-language = st.sidebar.selectbox("Select language:", ["English", "French", "Hindi"])
-lang_code = {"English": "en", "French": "fr", "Hindi": "hi"}[language]
+language = st.sidebar.selectbox("Select language:", ["English", "French", "Spanish"])
+lang_code = {"English": "en", "French": "fr", "Spanish": "es"}[language]
 
 st.sidebar.markdown("---")
 
@@ -226,9 +223,13 @@ with chat_col:
         last_user_message = st.session_state.chat_history[-2][1]
 
         time.sleep(1.0)
-        result = answer_query(last_user_message)
-        reply = translate_text(result["answer"], lang_code)
-
+        # 1) Translate user message -> English for retrieval & intent/safety
+        query_en = translate_to_english(last_user_message, lang_code)
+        # 2) Run existing pipeline on English
+        result = answer_query(query_en)
+        # 3) Translate final answer back to user language
+        reply_en = result["answer"]
+        reply = translate_from_english(reply_en, lang_code)
         # Replace typing animation
         st.session_state.chat_history[-1] = ("bot", reply)
 
